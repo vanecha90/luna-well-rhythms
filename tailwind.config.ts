@@ -13,6 +13,15 @@ export default {
       },
     },
     extend: {
+      backgroundImage: {
+        'gradient-sunset': 'var(--gradient-sunset)',
+        'gradient-moonlight': 'var(--gradient-moonlight)',
+        'gradient-dawn': 'var(--gradient-dawn)',
+      },
+      boxShadow: {
+        'soft': 'var(--shadow-soft)',
+        'glow': 'var(--shadow-glow)',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
