@@ -1,4 +1,3 @@
-import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,12 +15,11 @@ import BottomNav from "./components/BottomNav";
 import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-function App() {
-  const [queryClient] = React.useState(() => new QueryClient());
-  
+const queryClient = new QueryClient();
+
+const App = () => {
   return (
-    <React.Fragment>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -87,8 +85,7 @@ function App() {
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
-    </React.Fragment>
   );
-}
+};
 
 export default App;
