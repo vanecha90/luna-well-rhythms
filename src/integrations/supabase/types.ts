@@ -104,6 +104,60 @@ export type Database = {
         }
         Relationships: []
       }
+      symptom_logs: {
+        Row: {
+          acne: boolean | null
+          bloating: boolean | null
+          breast_tenderness: boolean | null
+          cramps: boolean | null
+          created_at: string
+          date: string
+          energy_level: number | null
+          headache: boolean | null
+          heavy_flow: boolean | null
+          id: string
+          mood: string | null
+          notes: string | null
+          spotting: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acne?: boolean | null
+          bloating?: boolean | null
+          breast_tenderness?: boolean | null
+          cramps?: boolean | null
+          created_at?: string
+          date?: string
+          energy_level?: number | null
+          headache?: boolean | null
+          heavy_flow?: boolean | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          spotting?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acne?: boolean | null
+          bloating?: boolean | null
+          breast_tenderness?: boolean | null
+          cramps?: boolean | null
+          created_at?: string
+          date?: string
+          energy_level?: number | null
+          headache?: boolean | null
+          heavy_flow?: boolean | null
+          id?: string
+          mood?: string | null
+          notes?: string | null
+          spotting?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_logs: {
         Row: {
           calories_burned: number
