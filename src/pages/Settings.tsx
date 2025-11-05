@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Settings as SettingsIcon, Bell, User, Shield, HelpCircle, LogOut, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const settingsSections = [
   {
@@ -28,6 +29,7 @@ const settingsSections = [
 ];
 
 export default function Settings() {
+  const { signOut } = useAuth();
   const [showHoroscope, setShowHoroscope] = useState(() => {
     const saved = localStorage.getItem('showHoroscope');
     return saved !== null ? JSON.parse(saved) : true;
@@ -125,7 +127,7 @@ export default function Settings() {
         ))}
 
         {/* Logout Button */}
-        <Button variant="outline" size="lg" className="w-full">
+        <Button variant="outline" size="lg" className="w-full" onClick={signOut}>
           <LogOut className="h-4 w-4 mr-2" />
           Log Out
         </Button>
