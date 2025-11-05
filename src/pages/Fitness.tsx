@@ -1,35 +1,209 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, TrendingUp, Zap, Heart } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Activity, TrendingUp, Zap, Heart, Clock, Flame, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const workouts = [
   {
     name: "HIIT Cardio",
-    duration: "30 min",
+    duration: 30,
     intensity: "High",
-    calories: "350 cal",
+    calories: 350,
     recommended: true,
-    description: "Perfect for your current phase"
+    description: "Perfect for your current phase",
+    exercises: [
+      "Jumping jacks - 1 min",
+      "Burpees - 45 sec",
+      "High knees - 1 min",
+      "Mountain climbers - 45 sec",
+      "Rest - 30 sec",
+      "Repeat 4 times"
+    ]
   },
   {
     name: "Yoga Flow",
-    duration: "45 min",
+    duration: 45,
     intensity: "Low",
-    calories: "180 cal",
+    calories: 180,
     recommended: false,
-    description: "Gentle stretching and mindfulness"
+    description: "Gentle stretching and mindfulness",
+    exercises: [
+      "Sun Salutation A - 5 rounds",
+      "Warrior sequence - 10 min",
+      "Hip openers - 10 min",
+      "Seated forward folds - 5 min",
+      "Savasana - 10 min"
+    ]
   },
   {
     name: "Strength Training",
-    duration: "40 min",
+    duration: 40,
     intensity: "High",
-    calories: "300 cal",
+    calories: 300,
     recommended: true,
-    description: "Build muscle during peak energy"
+    description: "Build muscle during peak energy",
+    exercises: [
+      "Squats - 3 sets of 12",
+      "Push-ups - 3 sets of 10",
+      "Lunges - 3 sets of 12 each leg",
+      "Plank - 3 sets of 45 sec",
+      "Dumbbell rows - 3 sets of 12"
+    ]
   },
 ];
 
 export default function Fitness() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [steps, setSteps] = useState(0);
+  const [calories, setCalories] = useState(0);
+  const [avgHeartRate, setAvgHeartRate] = useState(0);
+  const [isTrackingDialogOpen, setIsTrackingDialogOpen] = useState(false);
+  const [isWorkoutDialogOpen, setIsWorkoutDialogOpen] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<typeof workouts[0] | null>(null);
+  const [trackingType, setTrackingType] = useState<'steps' | 'calories'>('steps');
+  const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      fetchTodayTracking();
+    }
+  }, [user]);
+
+  const fetchTodayTracking = async () => {
+    if (!user) return;
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const { data, error } = await supabase
+      .from('fitness_tracking')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching tracking:', error);
+      return;
+    }
+
+    if (data) {
+      setSteps(data.steps || 0);
+      setCalories(data.calories_burned || 0);
+      setAvgHeartRate(data.avg_heart_rate || 0);
+    }
+  };
+
+  const handleUpdateTracking = async () => {
+    if (!user || !inputValue) return;
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const value = parseInt(inputValue);
+
+    if (isNaN(value)) {
+      toast({
+        title: "Invalid input",
+        description: "Please enter a valid number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updateData = trackingType === 'steps' 
+      ? { steps: value }
+      : { calories_burned: value };
+
+    const { error } = await supabase
+      .from('fitness_tracking')
+      .upsert({
+        user_id: user.id,
+        date: today,
+        ...updateData,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update tracking",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: `${trackingType === 'steps' ? 'Steps' : 'Calories'} updated!`,
+    });
+
+    setIsTrackingDialogOpen(false);
+    setInputValue("");
+    fetchTodayTracking();
+  };
+
+  const handleStartWorkout = async (workout: typeof workouts[0]) => {
+    setSelectedWorkout(workout);
+    setIsWorkoutDialogOpen(true);
+  };
+
+  const handleCompleteWorkout = async () => {
+    if (!user || !selectedWorkout) return;
+
+    const { error } = await supabase
+      .from('workout_logs')
+      .insert({
+        user_id: user.id,
+        workout_name: selectedWorkout.name,
+        duration_minutes: selectedWorkout.duration,
+        intensity: selectedWorkout.intensity,
+        calories_burned: selectedWorkout.calories,
+        description: selectedWorkout.description,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log workout",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update calories in tracking
+    const today = format(new Date(), 'yyyy-MM-dd');
+    await supabase
+      .from('fitness_tracking')
+      .upsert({
+        user_id: user.id,
+        date: today,
+        calories_burned: calories + selectedWorkout.calories,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+    toast({
+      title: "Workout Complete!",
+      description: `Great job completing ${selectedWorkout.name}`,
+    });
+
+    setIsWorkoutDialogOpen(false);
+    setSelectedWorkout(null);
+    fetchTodayTracking();
+  };
+
+  const openTrackingDialog = (type: 'steps' | 'calories') => {
+    setTrackingType(type);
+    setInputValue("");
+    setIsTrackingDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen pb-20 bg-gradient-dawn">
       {/* Header */}
@@ -46,19 +220,27 @@ export default function Fitness() {
       <div className="px-6 py-6 space-y-6">
         {/* Today's Stats */}
         <div className="grid grid-cols-3 gap-3">
-          <Card className="p-4 bg-card shadow-soft border-border text-center">
+          <Card 
+            className="p-4 bg-card shadow-soft border-border text-center cursor-pointer hover:shadow-glow transition-shadow"
+            onClick={() => openTrackingDialog('steps')}
+          >
             <TrendingUp className="h-5 w-5 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">8,432</p>
+            <p className="text-2xl font-bold text-foreground">{steps.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">Steps</p>
+            <Plus className="h-4 w-4 text-primary mx-auto mt-1" />
           </Card>
-          <Card className="p-4 bg-card shadow-soft border-border text-center">
+          <Card 
+            className="p-4 bg-card shadow-soft border-border text-center cursor-pointer hover:shadow-glow transition-shadow"
+            onClick={() => openTrackingDialog('calories')}
+          >
             <Zap className="h-5 w-5 text-accent mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">420</p>
+            <p className="text-2xl font-bold text-foreground">{calories}</p>
             <p className="text-xs text-muted-foreground">Calories</p>
+            <Plus className="h-4 w-4 text-accent mx-auto mt-1" />
           </Card>
           <Card className="p-4 bg-card shadow-soft border-border text-center">
             <Heart className="h-5 w-5 text-destructive mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">68</p>
+            <p className="text-2xl font-bold text-foreground">{avgHeartRate || '--'}</p>
             <p className="text-xs text-muted-foreground">Avg BPM</p>
           </Card>
         </div>
@@ -115,11 +297,15 @@ export default function Fitness() {
                 <p className="text-sm text-muted-foreground mb-4">{workout.description}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{workout.duration}</span>
+                    <span>{workout.duration} min</span>
                     <span>•</span>
-                    <span>{workout.calories}</span>
+                    <span>{workout.calories} cal</span>
                   </div>
-                  <Button variant={workout.recommended ? "gradient" : "outline"} size="sm">
+                  <Button 
+                    variant={workout.recommended ? "gradient" : "outline"} 
+                    size="sm"
+                    onClick={() => handleStartWorkout(workout)}
+                  >
                     Start
                   </Button>
                 </div>
@@ -134,6 +320,102 @@ export default function Fitness() {
           <Button variant="default" size="lg">Log Workout</Button>
         </div>
       </div>
+
+      {/* Tracking Dialog */}
+      <Dialog open={isTrackingDialogOpen} onOpenChange={setIsTrackingDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Update {trackingType === 'steps' ? 'Steps' : 'Calories'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="value">
+                {trackingType === 'steps' ? 'Number of Steps' : 'Calories Burned'}
+              </Label>
+              <Input
+                id="value"
+                type="number"
+                placeholder={trackingType === 'steps' ? 'e.g. 10000' : 'e.g. 500'}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+            <Button className="w-full" onClick={handleUpdateTracking}>
+              Update {trackingType === 'steps' ? 'Steps' : 'Calories'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Workout Details Dialog */}
+      <Dialog open={isWorkoutDialogOpen} onOpenChange={setIsWorkoutDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-foreground">
+              {selectedWorkout?.name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedWorkout && (
+            <div className="space-y-6 py-4">
+              {/* Workout Meta Info */}
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>{selectedWorkout.duration} minutes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flame className="h-4 w-4" />
+                  <span>{selectedWorkout.calories} calories</span>
+                </div>
+                <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                  selectedWorkout.intensity === 'High' 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'bg-secondary/10 text-secondary'
+                }`}>
+                  {selectedWorkout.intensity}
+                </span>
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-muted-foreground">{selectedWorkout.description}</p>
+              </div>
+
+              {/* Exercises */}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Exercises
+                </h3>
+                <ol className="space-y-3">
+                  {selectedWorkout.exercises.map((exercise, index) => (
+                    <li key={index} className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                        {index + 1}
+                      </span>
+                      <span className="pt-0.5">{exercise}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" onClick={() => setIsWorkoutDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button onClick={handleCompleteWorkout}>
+                  Complete Workout
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

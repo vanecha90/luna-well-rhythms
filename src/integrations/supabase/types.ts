@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fitness_tracking: {
+        Row: {
+          avg_heart_rate: number | null
+          calories_burned: number | null
+          created_at: string
+          date: string
+          id: string
+          steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_heart_rate?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_heart_rate?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -68,6 +101,42 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      workout_logs: {
+        Row: {
+          calories_burned: number
+          completed_at: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          intensity: string
+          user_id: string
+          workout_name: string
+        }
+        Insert: {
+          calories_burned: number
+          completed_at?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          intensity: string
+          user_id: string
+          workout_name: string
+        }
+        Update: {
+          calories_burned?: number
+          completed_at?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          intensity?: string
+          user_id?: string
+          workout_name?: string
         }
         Relationships: []
       }
