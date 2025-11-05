@@ -16,9 +16,9 @@ import BottomNav from "./components/BottomNav";
 import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const queryClient = new QueryClient();
-
 function App() {
+  const [queryClient] = React.useState(() => new QueryClient());
+  
   return (
     <React.Fragment>
       <QueryClientProvider client={queryClient}>
