@@ -1,6 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings as SettingsIcon, Bell, User, Shield, HelpCircle, LogOut } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Settings as SettingsIcon, Bell, User, Shield, HelpCircle, LogOut, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const settingsSections = [
   {
@@ -26,6 +28,15 @@ const settingsSections = [
 ];
 
 export default function Settings() {
+  const [showHoroscope, setShowHoroscope] = useState(() => {
+    const saved = localStorage.getItem('showHoroscope');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('showHoroscope', JSON.stringify(showHoroscope));
+  }, [showHoroscope]);
+
   return (
     <div className="min-h-screen pb-20 bg-gradient-dawn">
       {/* Header */}
@@ -72,6 +83,26 @@ export default function Settings() {
             </div>
           </div>
         </Card>
+
+        {/* Display Preferences */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Eye className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Display Preferences</h2>
+          </div>
+          <Card className="bg-card shadow-soft border-border">
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-foreground font-medium">Show Horoscope</p>
+                <p className="text-sm text-muted-foreground">Display daily horoscope on dashboard</p>
+              </div>
+              <Switch
+                checked={showHoroscope}
+                onCheckedChange={setShowHoroscope}
+              />
+            </div>
+          </Card>
+        </div>
 
         {/* Settings Sections */}
         {settingsSections.map((section) => (
