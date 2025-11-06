@@ -188,14 +188,14 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Password (minimum 12 characters)</Label>
                   <Input
                     id="signup-password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={12}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading} variant="gradient">
