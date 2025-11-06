@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          daily_quotes: boolean | null
+          id: string
+          period_reminders: boolean | null
+          reminder_days_before: number | null
+          updated_at: string
+          user_id: string
+          wellness_tips: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          daily_quotes?: boolean | null
+          id?: string
+          period_reminders?: boolean | null
+          reminder_days_before?: number | null
+          updated_at?: string
+          user_id: string
+          wellness_tips?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          daily_quotes?: boolean | null
+          id?: string
+          period_reminders?: boolean | null
+          reminder_days_before?: number | null
+          updated_at?: string
+          user_id?: string
+          wellness_tips?: boolean | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

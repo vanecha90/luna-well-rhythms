@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Bell, User, Shield, HelpCircle, LogOut, Eye, Edit2, Save, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings as SettingsIcon, Bell, User, Shield, HelpCircle, LogOut, Eye, Edit2, Save, X, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,15 +43,24 @@ export default function Settings() {
   });
 
   // Profile editing
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Cycle editing
-  const [isEditingCycle, setIsEditingCycle] = useState(false);
   const [cycleLength, setCycleLength] = useState(28);
   const [periodDuration, setPeriodDuration] = useState(5);
   const [lastPeriodDate, setLastPeriodDate] = useState("");
+
+  // Health Profile
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [bloodType, setBloodType] = useState("");
+
+  // Notifications
+  const [periodReminders, setPeriodReminders] = useState(true);
+  const [wellnessTips, setWellnessTips] = useState(true);
+  const [dailyQuotes, setDailyQuotes] = useState(true);
+  const [reminderDaysBefore, setReminderDaysBefore] = useState(2);
 
   useEffect(() => {
     localStorage.setItem('showHoroscope', JSON.stringify(showHoroscope));
@@ -60,6 +70,7 @@ export default function Settings() {
     if (user) {
       fetchProfile();
       fetchCycleSettings();
+      fetchNotificationSettings();
     }
   }, [user]);
 
@@ -89,6 +100,21 @@ export default function Settings() {
     }
   };
 
+  const fetchNotificationSettings = async () => {
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', user?.id)
+      .maybeSingle();
+
+    if (data) {
+      setPeriodReminders(data.period_reminders);
+      setWellnessTips(data.wellness_tips);
+      setDailyQuotes(data.daily_quotes);
+      setReminderDaysBefore(data.reminder_days_before || 2);
+    }
+  };
+
   const handleSaveProfile = async () => {
     setLoading(true);
     const { error } = await supabase
@@ -109,7 +135,6 @@ export default function Settings() {
         title: "Success",
         description: "Profile updated successfully",
       });
-      setIsEditingProfile(false);
     }
     setLoading(false);
   };
@@ -136,7 +161,33 @@ export default function Settings() {
         title: "Success",
         description: "Cycle settings updated successfully",
       });
-      setIsEditingCycle(false);
+    }
+    setLoading(false);
+  };
+
+  const handleSaveNotifications = async () => {
+    setLoading(true);
+    const { error } = await supabase
+      .from('notification_settings')
+      .upsert({
+        user_id: user?.id,
+        period_reminders: periodReminders,
+        wellness_tips: wellnessTips,
+        daily_quotes: dailyQuotes,
+        reminder_days_before: reminderDaysBefore,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Notification settings updated successfully",
+      });
     }
     setLoading(false);
   };
@@ -157,144 +208,177 @@ export default function Settings() {
       <div className="px-6 py-6 space-y-6">
         {/* Profile Card */}
         <Card className="p-6 bg-card shadow-glow border-border">
-          {isEditingProfile ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Enter your name"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSaveProfile} disabled={loading} size="sm">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsEditingProfile(false);
-                    fetchProfile();
-                  }} 
-                  size="sm"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-sunset flex items-center justify-center">
+              <User className="h-8 w-8 text-white" />
             </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-sunset flex items-center justify-center">
-                <User className="h-8 w-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">{displayName || "Set your name"}</h2>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-foreground">{displayName || "Set your name"}</h2>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-          )}
+          </div>
         </Card>
 
-        {/* Cycle Info */}
-        <Card className="p-5 bg-gradient-moonlight shadow-glow border-0">
-          <div className="text-white space-y-3">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold">Cycle Information</h3>
-              {!isEditingCycle && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIsEditingCycle(true)}
-                  className="text-white hover:bg-white/20"
-                >
-                  <Edit2 className="h-4 w-4" />
+        {/* Account Settings Tabs */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <User className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Account</h2>
+          </div>
+          <Card className="bg-card shadow-soft border-border p-4">
+            <Tabs defaultValue="personal" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                <TabsTrigger value="cycle">Cycle Settings</TabsTrigger>
+                <TabsTrigger value="health">Health Profile</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="personal" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <Button onClick={handleSaveProfile} disabled={loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
                 </Button>
-              )}
-            </div>
-            {isEditingCycle ? (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label htmlFor="cycleLength" className="text-white/80 text-sm">Average Cycle Length (days)</Label>
+              </TabsContent>
+
+              <TabsContent value="cycle" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cycleLength">Average Cycle Length (days)</Label>
                   <Input
                     id="cycleLength"
                     type="number"
                     value={cycleLength}
                     onChange={(e) => setCycleLength(Number(e.target.value))}
-                    className="bg-white/10 border-white/20 text-white"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="periodDuration" className="text-white/80 text-sm">Period Duration (days)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="periodDuration">Period Duration (days)</Label>
                   <Input
                     id="periodDuration"
                     type="number"
                     value={periodDuration}
                     onChange={(e) => setPeriodDuration(Number(e.target.value))}
-                    className="bg-white/10 border-white/20 text-white"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="lastPeriod" className="text-white/80 text-sm">Last Period Started</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="lastPeriod">Last Period Started</Label>
                   <Input
                     id="lastPeriod"
                     type="date"
                     value={lastPeriodDate}
                     onChange={(e) => setLastPeriodDate(e.target.value)}
-                    className="bg-white/10 border-white/20 text-white"
                   />
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    onClick={handleSaveCycle} 
-                    disabled={loading}
-                    size="sm"
-                    className="bg-white text-primary hover:bg-white/90"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsEditingCycle(false);
-                      fetchCycleSettings();
-                    }}
-                    size="sm"
-                    className="border-white/20 text-white hover:bg-white/20"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
+                <Button onClick={handleSaveCycle} disabled={loading}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="health" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    placeholder="Enter your height"
+                  />
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/80">Average Cycle Length:</span>
-                  <span className="font-medium">{cycleLength} days</span>
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Weight (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    placeholder="Enter your weight"
+                  />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/80">Period Duration:</span>
-                  <span className="font-medium">{periodDuration} days</span>
+                <div className="space-y-2">
+                  <Label htmlFor="bloodType">Blood Type</Label>
+                  <Input
+                    id="bloodType"
+                    value={bloodType}
+                    onChange={(e) => setBloodType(e.target.value)}
+                    placeholder="e.g., A+, O-, B+"
+                  />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/80">Last Period Started:</span>
-                  <span className="font-medium">
-                    {lastPeriodDate ? format(new Date(lastPeriodDate), "MMM dd, yyyy") : "Not set"}
-                  </span>
-                </div>
-              </>
-            )}
+                <Button disabled>
+                  <Heart className="h-4 w-4 mr-2" />
+                  Coming Soon
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </div>
+
+        {/* Notifications & Reminders */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Notifications & Reminders</h2>
           </div>
-        </Card>
+          <Card className="bg-card shadow-soft border-border divide-y divide-border">
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-foreground font-medium">Period Reminders</p>
+                <p className="text-sm text-muted-foreground">Get notified before your period starts</p>
+              </div>
+              <Switch
+                checked={periodReminders}
+                onCheckedChange={setPeriodReminders}
+              />
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-foreground font-medium">Wellness Tips</p>
+                <p className="text-sm text-muted-foreground">Daily wellness and health tips</p>
+              </div>
+              <Switch
+                checked={wellnessTips}
+                onCheckedChange={setWellnessTips}
+              />
+            </div>
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-foreground font-medium">Daily Quotes</p>
+                <p className="text-sm text-muted-foreground">Inspirational quotes each day</p>
+              </div>
+              <Switch
+                checked={dailyQuotes}
+                onCheckedChange={setDailyQuotes}
+              />
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <Label htmlFor="reminderDays">Remind me (days before period)</Label>
+                <Input
+                  id="reminderDays"
+                  type="number"
+                  min="1"
+                  max="7"
+                  value={reminderDaysBefore}
+                  onChange={(e) => setReminderDaysBefore(Number(e.target.value))}
+                  className="mt-2"
+                />
+              </div>
+              <Button onClick={handleSaveNotifications} disabled={loading} className="w-full">
+                <Save className="h-4 w-4 mr-2" />
+                Save Notification Settings
+              </Button>
+            </div>
+          </Card>
+        </div>
 
         {/* Display Preferences */}
         <div>
@@ -316,25 +400,43 @@ export default function Settings() {
           </Card>
         </div>
 
-        {/* Settings Sections */}
-        {settingsSections.map((section) => (
-          <div key={section.title}>
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <section.icon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
-            </div>
-            <Card className="divide-y divide-border bg-card shadow-soft border-border">
-              {section.items.map((item, index) => (
-                <button
-                  key={item}
-                  className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors first:rounded-t-lg last:rounded-b-lg"
-                >
-                  <span className="text-foreground">{item}</span>
-                </button>
-              ))}
-            </Card>
+        {/* Privacy & Security */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Shield className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Privacy & Security</h2>
           </div>
-        ))}
+          <Card className="divide-y divide-border bg-card shadow-soft border-border">
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors first:rounded-t-lg">
+              <span className="text-foreground">Data Privacy</span>
+            </button>
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors">
+              <span className="text-foreground">Export Data</span>
+            </button>
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors last:rounded-b-lg">
+              <span className="text-foreground">Delete Account</span>
+            </button>
+          </Card>
+        </div>
+
+        {/* Support */}
+        <div>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <HelpCircle className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Support</h2>
+          </div>
+          <Card className="divide-y divide-border bg-card shadow-soft border-border">
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors first:rounded-t-lg">
+              <span className="text-foreground">Help Center</span>
+            </button>
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors">
+              <span className="text-foreground">Contact Us</span>
+            </button>
+            <button className="w-full px-5 py-4 text-left hover:bg-muted/50 transition-colors last:rounded-b-lg">
+              <span className="text-foreground">About LunaWell</span>
+            </button>
+          </Card>
+        </div>
 
         {/* Logout Button */}
         <Button variant="outline" size="lg" className="w-full" onClick={signOut}>
