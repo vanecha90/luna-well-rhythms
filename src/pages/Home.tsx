@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import moonPhasesImg from "@/assets/moon-phases.jpg";
-import { Sparkles, Droplets, Sun, Heart, Stars } from "lucide-react";
+import { Sparkles, Droplets, Sun, Heart, Stars, Footprints, Dumbbell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,29 @@ const zodiacSigns = [
   { name: "Aquarius", symbol: "♒", dates: "Jan 20 - Feb 18", message: "Innovation is in your nature. Think outside the box and inspire change." },
   { name: "Pisces", symbol: "♓", dates: "Feb 19 - Mar 20", message: "Dreams hold wisdom. Listen to your inner voice and creative impulses." },
 ];
+
+const phaseWorkouts = {
+  menstrual: {
+    name: "Menstrual Phase",
+    workouts: ["Gentle yoga", "Light stretching", "Slow walks", "Restorative pilates"],
+    tip: "Listen to your body and rest when needed. Low-intensity movement helps ease discomfort."
+  },
+  follicular: {
+    name: "Follicular Phase",
+    workouts: ["HIIT training", "Running", "Strength training", "Dance cardio"],
+    tip: "Energy is rising! Try new challenging workouts and push your limits."
+  },
+  ovulatory: {
+    name: "Ovulatory Phase",
+    workouts: ["High-intensity cardio", "Group fitness classes", "Power yoga", "Boxing"],
+    tip: "Peak energy and strength. Go for your personal bests!"
+  },
+  luteal: {
+    name: "Luteal Phase",
+    workouts: ["Moderate strength training", "Swimming", "Cycling", "Barre"],
+    tip: "Maintain steady activity. Focus on consistency over intensity."
+  }
+};
 
 const getZodiacFromDate = (dateStr: string) => {
   const d = new Date(dateStr);
@@ -41,6 +64,13 @@ const getZodiacFromDate = (dateStr: string) => {
   return null;
 };
 
+const getCyclePhase = (cycleDay: number, periodDuration: number) => {
+  if (cycleDay <= periodDuration) return "menstrual";
+  if (cycleDay <= 13) return "follicular";
+  if (cycleDay <= 16) return "ovulatory";
+  return "luteal";
+};
+
 export default function Home() {
   const { user } = useAuth();
   const [showHoroscope, setShowHoroscope] = useState(() => {
@@ -49,6 +79,9 @@ export default function Home() {
   });
   const [userZodiac, setUserZodiac] = useState<typeof zodiacSigns[0] | null>(null);
   const [loadingZodiac, setLoadingZodiac] = useState(true);
+  const [todaySteps, setTodaySteps] = useState<number | null>(null);
+  const [cycleDay, setCycleDay] = useState<number | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<keyof typeof phaseWorkouts>("follicular");
 
   useEffect(() => {
     const handleStorage = () => {
@@ -60,25 +93,57 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const fetchUserZodiac = async () => {
+    const fetchUserData = async () => {
       if (!user) {
         setLoadingZodiac(false);
         return;
       }
-      const { data } = await supabase
+
+      // Fetch profile for zodiac
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('date_of_birth')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (data?.date_of_birth) {
-        const signName = getZodiacFromDate(data.date_of_birth);
+      if (profileData?.date_of_birth) {
+        const signName = getZodiacFromDate(profileData.date_of_birth);
         const sign = zodiacSigns.find(z => z.name === signName);
         setUserZodiac(sign || null);
       }
       setLoadingZodiac(false);
+
+      // Fetch today's steps
+      const today = new Date().toISOString().split('T')[0];
+      const { data: fitnessData } = await supabase
+        .from('fitness_tracking')
+        .select('steps')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle();
+
+      setTodaySteps(fitnessData?.steps ?? 0);
+
+      // Fetch cycle settings for phase calculation
+      const { data: cycleData } = await supabase
+        .from('cycle_settings')
+        .select('last_period_date, cycle_length, period_duration')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (cycleData?.last_period_date) {
+        const lastPeriod = new Date(cycleData.last_period_date);
+        const todayDate = new Date();
+        const diffTime = todayDate.getTime() - lastPeriod.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const cycleLength = cycleData.cycle_length || 28;
+        const periodDuration = cycleData.period_duration || 5;
+        const day = (diffDays % cycleLength) + 1;
+        setCycleDay(day);
+        setCurrentPhase(getCyclePhase(day, periodDuration));
+      }
     };
-    fetchUserZodiac();
+    fetchUserData();
   }, [user]);
 
   const currentDate = new Date().toLocaleDateString('en-US', { 
@@ -87,6 +152,8 @@ export default function Home() {
     month: 'long', 
     day: 'numeric' 
   });
+
+  const phaseInfo = phaseWorkouts[currentPhase];
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-dawn">
@@ -149,8 +216,8 @@ export default function Home() {
                 <h3 className="font-semibold text-foreground">Cycle Day</h3>
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-primary">14</p>
-                <p className="text-sm text-muted-foreground">Follicular Phase</p>
+                <p className="text-3xl font-bold text-primary">{cycleDay ?? "--"}</p>
+                <p className="text-sm text-muted-foreground">{phaseInfo.name}</p>
               </div>
             </div>
           </Card>
@@ -168,6 +235,44 @@ export default function Home() {
             </div>
           </Card>
         </div>
+
+        {/* Daily Steps */}
+        <Card className="p-5 bg-card shadow-soft border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Footprints className="h-6 w-6 text-primary" />
+              <div>
+                <h3 className="font-semibold text-foreground">Today's Steps</h3>
+                <p className="text-sm text-muted-foreground">Goal: 10,000 steps</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary">{todaySteps?.toLocaleString() ?? 0}</p>
+              <p className="text-xs text-muted-foreground">
+                {todaySteps !== null && todaySteps >= 10000 ? "Goal reached! 🎉" : `${Math.round(((todaySteps ?? 0) / 10000) * 100)}% complete`}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Workout Suggestions */}
+        <Card className="p-6 bg-gradient-sunset shadow-glow border-0">
+          <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+            <Dumbbell className="h-5 w-5" />
+            Workout Suggestions for {phaseInfo.name}
+          </h3>
+          <p className="text-white/80 text-sm mb-4">{phaseInfo.tip}</p>
+          <div className="flex flex-wrap gap-2">
+            {phaseInfo.workouts.map((workout) => (
+              <span 
+                key={workout}
+                className="px-3 py-1.5 bg-white/20 rounded-full text-sm text-white font-medium"
+              >
+                {workout}
+              </span>
+            ))}
+          </div>
+        </Card>
 
         {/* Weather & Wellness */}
         <Card className="p-5 bg-card shadow-soft border-border">
@@ -191,18 +296,37 @@ export default function Home() {
         <Card className="p-6 bg-gradient-moonlight shadow-glow border-0">
           <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
-            Follicular Phase Insights
+            {phaseInfo.name} Insights
           </h3>
           <div className="space-y-3 text-white/90 text-sm">
-            <p className="leading-relaxed">
-              ✨ Your energy is rising! This is a great time for high-intensity workouts and trying new activities.
-            </p>
-            <p className="leading-relaxed">
-              🥗 Focus on fresh, energizing foods: leafy greens, lean proteins, and vibrant fruits.
-            </p>
-            <p className="leading-relaxed">
-              💪 Your strength and endurance are peaking. Push yourself in your fitness routine!
-            </p>
+            {currentPhase === "menstrual" && (
+              <>
+                <p className="leading-relaxed">🌙 Rest and restore. Honor your body's need for quiet and gentle care.</p>
+                <p className="leading-relaxed">🍵 Warm, nourishing foods and iron-rich meals support you now.</p>
+                <p className="leading-relaxed">💆 Prioritize sleep and self-care routines.</p>
+              </>
+            )}
+            {currentPhase === "follicular" && (
+              <>
+                <p className="leading-relaxed">✨ Your energy is rising! This is a great time for high-intensity workouts.</p>
+                <p className="leading-relaxed">🥗 Focus on fresh, energizing foods: leafy greens, lean proteins.</p>
+                <p className="leading-relaxed">💪 Your strength and endurance are peaking!</p>
+              </>
+            )}
+            {currentPhase === "ovulatory" && (
+              <>
+                <p className="leading-relaxed">🔥 Peak energy! You're at your strongest and most confident.</p>
+                <p className="leading-relaxed">🥑 Fiber-rich foods help with estrogen metabolism.</p>
+                <p className="leading-relaxed">🏃‍♀️ Great time for challenging workouts and social activities.</p>
+              </>
+            )}
+            {currentPhase === "luteal" && (
+              <>
+                <p className="leading-relaxed">🧘 Energy starts to wind down. Maintain steady, moderate activity.</p>
+                <p className="leading-relaxed">🍫 Complex carbs and magnesium-rich foods help with cravings.</p>
+                <p className="leading-relaxed">😌 Practice stress management and gentle self-care.</p>
+              </>
+            )}
           </div>
         </Card>
 
