@@ -5,14 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Activity, TrendingUp, Zap, Heart, Clock, Flame, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-const workouts = [
+export interface Workout {
+  name: string;
+  duration: number;
+  intensity: "High" | "Low" | "Medium";
+  calories: number;
+  recommended: boolean;
+  description: string;
+  exercises: string[];
+}
+
+export const workouts: Workout[] = [
   {
-    name: "HIIT Cardio",
+    name: "HIIT training",
     duration: 30,
     intensity: "High",
     calories: 350,
@@ -28,7 +39,7 @@ const workouts = [
     ]
   },
   {
-    name: "Yoga Flow",
+    name: "Gentle yoga",
     duration: 45,
     intensity: "Low",
     calories: 180,
@@ -43,7 +54,7 @@ const workouts = [
     ]
   },
   {
-    name: "Strength Training",
+    name: "Strength training",
     duration: 40,
     intensity: "High",
     calories: 300,
@@ -57,9 +68,204 @@ const workouts = [
       "Dumbbell rows - 3 sets of 12"
     ]
   },
+  {
+    name: "Running",
+    duration: 30,
+    intensity: "High",
+    calories: 320,
+    recommended: true,
+    description: "Cardio for endurance and energy",
+    exercises: [
+      "Warm-up walk - 5 min",
+      "Easy jog - 5 min",
+      "Moderate pace run - 15 min",
+      "Cool-down jog - 3 min",
+      "Stretching - 2 min"
+    ]
+  },
+  {
+    name: "Dance cardio",
+    duration: 35,
+    intensity: "High",
+    calories: 280,
+    recommended: true,
+    description: "Fun, energetic dance workout",
+    exercises: [
+      "Warm-up moves - 5 min",
+      "High-energy dance sequence - 10 min",
+      "Latin-inspired moves - 10 min",
+      "Cool-down groove - 5 min",
+      "Stretching - 5 min"
+    ]
+  },
+  {
+    name: "Light stretching",
+    duration: 20,
+    intensity: "Low",
+    calories: 80,
+    recommended: false,
+    description: "Gentle stretches for recovery",
+    exercises: [
+      "Neck rolls - 2 min",
+      "Shoulder stretches - 3 min",
+      "Hip flexor stretch - 4 min",
+      "Hamstring stretch - 4 min",
+      "Full body stretch - 7 min"
+    ]
+  },
+  {
+    name: "Slow walks",
+    duration: 30,
+    intensity: "Low",
+    calories: 100,
+    recommended: false,
+    description: "Easy walking for gentle movement",
+    exercises: [
+      "Leisurely walk at comfortable pace",
+      "Focus on deep breathing",
+      "Enjoy nature or listen to calming music",
+      "Optional light arm movements"
+    ]
+  },
+  {
+    name: "Restorative pilates",
+    duration: 40,
+    intensity: "Low",
+    calories: 150,
+    recommended: false,
+    description: "Gentle core and flexibility work",
+    exercises: [
+      "Breathing exercises - 5 min",
+      "Pelvic tilts - 5 min",
+      "Gentle leg circles - 10 min",
+      "Spine stretches - 10 min",
+      "Relaxation - 10 min"
+    ]
+  },
+  {
+    name: "High-intensity cardio",
+    duration: 25,
+    intensity: "High",
+    calories: 380,
+    recommended: true,
+    description: "Maximum effort cardio session",
+    exercises: [
+      "Jump rope - 3 min",
+      "Box jumps - 2 min",
+      "Sprint intervals - 10 min",
+      "Burpee variations - 5 min",
+      "Cool-down - 5 min"
+    ]
+  },
+  {
+    name: "Power yoga",
+    duration: 50,
+    intensity: "Medium",
+    calories: 250,
+    recommended: true,
+    description: "Challenging yoga for strength",
+    exercises: [
+      "Dynamic sun salutations - 10 min",
+      "Warrior flow - 15 min",
+      "Arm balances - 10 min",
+      "Core work - 10 min",
+      "Savasana - 5 min"
+    ]
+  },
+  {
+    name: "Swimming",
+    duration: 45,
+    intensity: "Medium",
+    calories: 350,
+    recommended: true,
+    description: "Full-body low-impact workout",
+    exercises: [
+      "Warm-up laps - 5 min",
+      "Freestyle - 15 min",
+      "Backstroke - 10 min",
+      "Breaststroke - 10 min",
+      "Cool-down - 5 min"
+    ]
+  },
+  {
+    name: "Cycling",
+    duration: 40,
+    intensity: "Medium",
+    calories: 320,
+    recommended: true,
+    description: "Great cardio for leg strength",
+    exercises: [
+      "Easy warm-up ride - 5 min",
+      "Moderate pace - 15 min",
+      "Hill intervals - 10 min",
+      "Recovery ride - 5 min",
+      "Cool-down - 5 min"
+    ]
+  },
+  {
+    name: "Barre",
+    duration: 50,
+    intensity: "Medium",
+    calories: 280,
+    recommended: true,
+    description: "Ballet-inspired toning workout",
+    exercises: [
+      "Warm-up - 5 min",
+      "Arm series - 10 min",
+      "Thigh work at barre - 15 min",
+      "Core exercises - 10 min",
+      "Stretching - 10 min"
+    ]
+  },
+  {
+    name: "Boxing",
+    duration: 35,
+    intensity: "High",
+    calories: 400,
+    recommended: true,
+    description: "High-energy punching workout",
+    exercises: [
+      "Jump rope warm-up - 5 min",
+      "Jab-cross combinations - 10 min",
+      "Hook and uppercut drills - 10 min",
+      "Bag work intervals - 5 min",
+      "Core and cool-down - 5 min"
+    ]
+  },
+  {
+    name: "Moderate strength training",
+    duration: 35,
+    intensity: "Medium",
+    calories: 250,
+    recommended: true,
+    description: "Balanced strength work",
+    exercises: [
+      "Goblet squats - 3 sets of 10",
+      "Dumbbell press - 3 sets of 10",
+      "Bent-over rows - 3 sets of 10",
+      "Deadlifts - 3 sets of 8",
+      "Plank holds - 3 sets of 30 sec"
+    ]
+  },
+  {
+    name: "Group fitness classes",
+    duration: 45,
+    intensity: "High",
+    calories: 350,
+    recommended: true,
+    description: "Energetic group workout",
+    exercises: [
+      "Warm-up - 5 min",
+      "Cardio intervals - 15 min",
+      "Strength circuits - 15 min",
+      "Core work - 5 min",
+      "Stretch and cool-down - 5 min"
+    ]
+  }
 ];
 
 export default function Fitness() {
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [steps, setSteps] = useState(0);
@@ -67,9 +273,22 @@ export default function Fitness() {
   const [avgHeartRate, setAvgHeartRate] = useState(0);
   const [isTrackingDialogOpen, setIsTrackingDialogOpen] = useState(false);
   const [isWorkoutDialogOpen, setIsWorkoutDialogOpen] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState<typeof workouts[0] | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [trackingType, setTrackingType] = useState<'steps' | 'calories'>('steps');
   const [inputValue, setInputValue] = useState("");
+
+  useEffect(() => {
+    if (location.state?.selectedWorkout) {
+      const workout = workouts.find(w => 
+        w.name.toLowerCase() === location.state.selectedWorkout.toLowerCase()
+      );
+      if (workout) {
+        setSelectedWorkout(workout);
+        setIsWorkoutDialogOpen(true);
+      }
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (user) {
