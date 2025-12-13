@@ -135,7 +135,7 @@ export default function Nutrition() {
   };
 
   const isPhaseRecipe = (recipe: any): recipe is Recipe => {
-    return 'id' in recipe && 'phase' in recipe;
+    return recipe !== null && typeof recipe === 'object' && 'id' in recipe && 'phase' in recipe;
   };
 
   return (
