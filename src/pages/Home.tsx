@@ -1,10 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import moonPhasesImg from "@/assets/moon-phases.jpg";
-import { Sparkles, Droplets, Sun, Heart, Stars, Footprints, Dumbbell } from "lucide-react";
+import { Sparkles, Droplets, Sun, Heart, Stars, Footprints, Dumbbell, ChefHat, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { getRecipesByPhase, type Recipe } from "@/data/phaseRecipes";
 
 const zodiacSigns = [
   { name: "Aries", symbol: "♈", dates: "Mar 21 - Apr 19", message: "Your energy is magnetic today. Channel it into creative projects and bold decisions." },
@@ -73,6 +75,7 @@ const getCyclePhase = (cycleDay: number, periodDuration: number) => {
 
 export default function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showHoroscope, setShowHoroscope] = useState(() => {
     const saved = localStorage.getItem('showHoroscope');
     return saved !== null ? JSON.parse(saved) : true;
@@ -82,6 +85,7 @@ export default function Home() {
   const [todaySteps, setTodaySteps] = useState<number | null>(null);
   const [cycleDay, setCycleDay] = useState<number | null>(null);
   const [currentPhase, setCurrentPhase] = useState<keyof typeof phaseWorkouts>("follicular");
+  const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -99,7 +103,6 @@ export default function Home() {
         return;
       }
 
-      // Fetch profile for zodiac
       const { data: profileData } = await supabase
         .from('profiles')
         .select('date_of_birth')
@@ -113,7 +116,6 @@ export default function Home() {
       }
       setLoadingZodiac(false);
 
-      // Fetch today's steps
       const today = new Date().toISOString().split('T')[0];
       const { data: fitnessData } = await supabase
         .from('fitness_tracking')
@@ -124,7 +126,6 @@ export default function Home() {
 
       setTodaySteps(fitnessData?.steps ?? 0);
 
-      // Fetch cycle settings for phase calculation
       const { data: cycleData } = await supabase
         .from('cycle_settings')
         .select('last_period_date, cycle_length, period_duration')
@@ -154,6 +155,23 @@ export default function Home() {
   });
 
   const phaseInfo = phaseWorkouts[currentPhase];
+  const phaseRecipes = getRecipesByPhase(currentPhase);
+
+  const handleRecipeClick = (recipe: Recipe) => {
+    navigate('/nutrition', { state: { selectedRecipeId: recipe.id } });
+  };
+
+  const handleWorkoutClick = (workoutName: string) => {
+    navigate('/fitness', { state: { selectedWorkout: workoutName } });
+  };
+
+  const nextRecipe = () => {
+    setCurrentRecipeIndex((prev) => (prev + 1) % phaseRecipes.length);
+  };
+
+  const prevRecipe = () => {
+    setCurrentRecipeIndex((prev) => (prev - 1 + phaseRecipes.length) % phaseRecipes.length);
+  };
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-dawn">
@@ -249,10 +267,71 @@ export default function Home() {
             <div className="text-right">
               <p className="text-2xl font-bold text-primary">{todaySteps?.toLocaleString() ?? 0}</p>
               <p className="text-xs text-muted-foreground">
-                {todaySteps !== null && todaySteps >= 10000 ? "Goal reached! 🎉" : `${Math.round(((todaySteps ?? 0) / 10000) * 100)}% complete`}
+                {todaySteps !== null && todaySteps >= 10000 ? "Goal reached!" : `${Math.round(((todaySteps ?? 0) / 10000) * 100)}% complete`}
               </p>
             </div>
           </div>
+        </Card>
+
+        {/* Recipe Carousel */}
+        <Card className="p-6 bg-gradient-moonlight shadow-glow border-0">
+          <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+            <ChefHat className="h-5 w-5" />
+            Recipes for {phaseInfo.name}
+          </h3>
+          
+          {phaseRecipes.length > 0 && (
+            <div className="relative">
+              <div 
+                className="bg-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/20 transition-colors"
+                onClick={() => handleRecipeClick(phaseRecipes[currentRecipeIndex])}
+              >
+                <h4 className="font-semibold text-white text-lg mb-1">
+                  {phaseRecipes[currentRecipeIndex].name}
+                </h4>
+                <p className="text-white/70 text-sm mb-3">
+                  {phaseRecipes[currentRecipeIndex].description}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-white/60">
+                  <span>{phaseRecipes[currentRecipeIndex].calories}</span>
+                  <span>•</span>
+                  <span>{phaseRecipes[currentRecipeIndex].prepTime}</span>
+                </div>
+                <p className="text-xs text-white/50 mt-3">Tap to view full recipe</p>
+              </div>
+              
+              <div className="flex items-center justify-between mt-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); prevRecipe(); }}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                
+                <div className="flex gap-1.5">
+                  {phaseRecipes.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        idx === currentRecipeIndex ? 'bg-white' : 'bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); nextRecipe(); }}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Workout Suggestions */}
@@ -264,12 +343,13 @@ export default function Home() {
           <p className="text-white/80 text-sm mb-4">{phaseInfo.tip}</p>
           <div className="flex flex-wrap gap-2">
             {phaseInfo.workouts.map((workout) => (
-              <span 
+              <button 
                 key={workout}
-                className="px-3 py-1.5 bg-white/20 rounded-full text-sm text-white font-medium"
+                onClick={() => handleWorkoutClick(workout)}
+                className="px-3 py-1.5 bg-white/20 rounded-full text-sm text-white font-medium hover:bg-white/30 transition-colors cursor-pointer"
               >
                 {workout}
-              </span>
+              </button>
             ))}
           </div>
         </Card>
@@ -301,30 +381,30 @@ export default function Home() {
           <div className="space-y-3 text-white/90 text-sm">
             {currentPhase === "menstrual" && (
               <>
-                <p className="leading-relaxed">🌙 Rest and restore. Honor your body's need for quiet and gentle care.</p>
-                <p className="leading-relaxed">🍵 Warm, nourishing foods and iron-rich meals support you now.</p>
-                <p className="leading-relaxed">💆 Prioritize sleep and self-care routines.</p>
+                <p className="leading-relaxed">Rest and restore. Honor your body's need for quiet and gentle care.</p>
+                <p className="leading-relaxed">Warm, nourishing foods and iron-rich meals support you now.</p>
+                <p className="leading-relaxed">Prioritize sleep and self-care routines.</p>
               </>
             )}
             {currentPhase === "follicular" && (
               <>
-                <p className="leading-relaxed">✨ Your energy is rising! This is a great time for high-intensity workouts.</p>
-                <p className="leading-relaxed">🥗 Focus on fresh, energizing foods: leafy greens, lean proteins.</p>
-                <p className="leading-relaxed">💪 Your strength and endurance are peaking!</p>
+                <p className="leading-relaxed">Your energy is rising! This is a great time for high-intensity workouts.</p>
+                <p className="leading-relaxed">Focus on fresh, energizing foods: leafy greens, lean proteins.</p>
+                <p className="leading-relaxed">Your strength and endurance are peaking!</p>
               </>
             )}
             {currentPhase === "ovulatory" && (
               <>
-                <p className="leading-relaxed">🔥 Peak energy! You're at your strongest and most confident.</p>
-                <p className="leading-relaxed">🥑 Fiber-rich foods help with estrogen metabolism.</p>
-                <p className="leading-relaxed">🏃‍♀️ Great time for challenging workouts and social activities.</p>
+                <p className="leading-relaxed">Peak energy! You're at your strongest and most confident.</p>
+                <p className="leading-relaxed">Fiber-rich foods help with estrogen metabolism.</p>
+                <p className="leading-relaxed">Great time for challenging workouts and social activities.</p>
               </>
             )}
             {currentPhase === "luteal" && (
               <>
-                <p className="leading-relaxed">🧘 Energy starts to wind down. Maintain steady, moderate activity.</p>
-                <p className="leading-relaxed">🍫 Complex carbs and magnesium-rich foods help with cravings.</p>
-                <p className="leading-relaxed">😌 Practice stress management and gentle self-care.</p>
+                <p className="leading-relaxed">Energy starts to wind down. Maintain steady, moderate activity.</p>
+                <p className="leading-relaxed">Complex carbs and magnesium-rich foods help with cravings.</p>
+                <p className="leading-relaxed">Practice stress management and gentle self-care.</p>
               </>
             )}
           </div>

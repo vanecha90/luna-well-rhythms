@@ -2,7 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Apple, Leaf, Flame, Droplets, Clock, Users } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { phaseRecipes, type Recipe } from "@/data/phaseRecipes";
 
 const nutrients = [
   { name: "Iron", description: "Leafy greens, red meat", phase: "Great for follicular phase" },
@@ -111,12 +113,29 @@ const mealSuggestions = [
 ];
 
 export default function Nutrition() {
-  const [selectedRecipe, setSelectedRecipe] = useState<typeof mealSuggestions[0] | null>(null);
+  const location = useLocation();
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | typeof mealSuggestions[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleViewRecipe = (recipe: typeof mealSuggestions[0]) => {
+  useEffect(() => {
+    if (location.state?.selectedRecipeId) {
+      const recipe = phaseRecipes.find(r => r.id === location.state.selectedRecipeId);
+      if (recipe) {
+        setSelectedRecipe(recipe);
+        setIsDialogOpen(true);
+      }
+      // Clear the state so it doesn't re-open on navigation
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const handleViewRecipe = (recipe: Recipe | typeof mealSuggestions[0]) => {
     setSelectedRecipe(recipe);
     setIsDialogOpen(true);
+  };
+
+  const isPhaseRecipe = (recipe: any): recipe is Recipe => {
+    return 'id' in recipe && 'phase' in recipe;
   };
 
   return (
@@ -179,6 +198,35 @@ export default function Nutrition() {
           </ul>
         </Card>
 
+        {/* Phase-Specific Recipes */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4 px-1">Phase-Specific Recipes</h2>
+          <div className="space-y-3">
+            {phaseRecipes.slice(0, 4).map((recipe) => (
+              <Card key={recipe.id} className="p-5 bg-card shadow-soft border-border">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{recipe.name}</h3>
+                    <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full capitalize">
+                      {recipe.phase} phase
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{recipe.calories}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">{recipe.description}</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => handleViewRecipe(recipe)}
+                >
+                  View Recipe
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         {/* Key Nutrients */}
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4 px-1">Focus Nutrients</h2>
@@ -236,7 +284,9 @@ export default function Nutrition() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-foreground">
-              {selectedRecipe?.meal}: {selectedRecipe?.suggestion}
+              {isPhaseRecipe(selectedRecipe) 
+                ? selectedRecipe?.name 
+                : `${selectedRecipe?.meal}: ${selectedRecipe?.suggestion}`}
             </DialogTitle>
           </DialogHeader>
           
@@ -257,6 +307,10 @@ export default function Nutrition() {
                   <span>{selectedRecipe.calories}</span>
                 </div>
               </div>
+
+              {isPhaseRecipe(selectedRecipe) && (
+                <p className="text-muted-foreground">{selectedRecipe.description}</p>
+              )}
 
               {/* Ingredients */}
               <div>
