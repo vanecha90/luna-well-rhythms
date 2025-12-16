@@ -283,21 +283,28 @@ export default function Home() {
           {phaseRecipes.length > 0 && (
             <div className="relative">
               <div 
-                className="bg-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/20 transition-colors"
+                className="bg-white/10 rounded-xl overflow-hidden cursor-pointer hover:bg-white/20 transition-colors"
                 onClick={() => handleRecipeClick(phaseRecipes[currentRecipeIndex])}
               >
-                <h4 className="font-semibold text-white text-lg mb-1">
-                  {phaseRecipes[currentRecipeIndex].name}
-                </h4>
-                <p className="text-white/70 text-sm mb-3">
-                  {phaseRecipes[currentRecipeIndex].description}
-                </p>
-                <div className="flex items-center gap-4 text-xs text-white/60">
-                  <span>{phaseRecipes[currentRecipeIndex].calories}</span>
-                  <span>•</span>
-                  <span>{phaseRecipes[currentRecipeIndex].prepTime}</span>
+                <img 
+                  src={phaseRecipes[currentRecipeIndex].image} 
+                  alt={phaseRecipes[currentRecipeIndex].name}
+                  className="w-full h-40 object-cover"
+                />
+                <div className="p-4">
+                  <h4 className="font-semibold text-white text-lg mb-1">
+                    {phaseRecipes[currentRecipeIndex].name}
+                  </h4>
+                  <p className="text-white/70 text-sm mb-3">
+                    {phaseRecipes[currentRecipeIndex].description}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-white/60">
+                    <span>{phaseRecipes[currentRecipeIndex].calories}</span>
+                    <span>•</span>
+                    <span>{phaseRecipes[currentRecipeIndex].prepTime}</span>
+                  </div>
+                  <p className="text-xs text-white/50 mt-3">Tap to view full recipe</p>
                 </div>
-                <p className="text-xs text-white/50 mt-3">Tap to view full recipe</p>
               </div>
               
               <div className="flex items-center justify-between mt-4">

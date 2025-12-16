@@ -203,25 +203,32 @@ export default function Nutrition() {
           <h2 className="text-lg font-semibold text-foreground mb-4 px-1">Phase-Specific Recipes</h2>
           <div className="space-y-3">
             {phaseRecipes.slice(0, 4).map((recipe) => (
-              <Card key={recipe.id} className="p-5 bg-card shadow-soft border-border">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{recipe.name}</h3>
-                    <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full capitalize">
-                      {recipe.phase} phase
-                    </span>
+              <Card key={recipe.id} className="overflow-hidden bg-card shadow-soft border-border">
+                <img 
+                  src={recipe.image} 
+                  alt={recipe.name}
+                  className="w-full h-32 object-cover"
+                />
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{recipe.name}</h3>
+                      <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full capitalize">
+                        {recipe.phase} phase
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{recipe.calories}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{recipe.calories}</span>
+                  <p className="text-sm text-muted-foreground mb-3">{recipe.description}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleViewRecipe(recipe)}
+                  >
+                    View Recipe
+                  </Button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">{recipe.description}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => handleViewRecipe(recipe)}
-                >
-                  View Recipe
-                </Button>
               </Card>
             ))}
           </div>

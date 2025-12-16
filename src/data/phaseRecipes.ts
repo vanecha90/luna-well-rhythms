@@ -6,7 +6,7 @@ export interface Recipe {
   prepTime: string;
   servings: string;
   phase: "menstrual" | "follicular" | "ovulatory" | "luteal";
-  image?: string;
+  image: string;
   ingredients: string[];
   instructions: string[];
 }
@@ -21,6 +21,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "45 mins",
     servings: "4",
     phase: "menstrual",
+    image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
     ingredients: [
       "1 lb beef stew meat",
       "4 cups beef broth",
@@ -48,6 +49,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "10 mins",
     servings: "1",
     phase: "menstrual",
+    image: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
     ingredients: [
       "1/2 cup rolled oats",
       "1 cup milk of choice",
@@ -72,6 +74,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "25 mins",
     servings: "2",
     phase: "menstrual",
+    image: "https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&h=300&fit=crop",
     ingredients: [
       "2 cups vegetable broth",
       "1 inch fresh ginger, grated",
@@ -98,6 +101,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "10 mins",
     servings: "1",
     phase: "follicular",
+    image: "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=400&h=300&fit=crop",
     ingredients: [
       "1 cup spinach",
       "1/2 cup frozen berries",
@@ -122,6 +126,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "20 mins",
     servings: "2",
     phase: "follicular",
+    image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
     ingredients: [
       "2 salmon fillets",
       "4 cups mixed greens",
@@ -146,6 +151,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "15 mins",
     servings: "1",
     phase: "follicular",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
     ingredients: [
       "1 cup cooked quinoa",
       "1 orange, segmented",
@@ -172,6 +178,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "10 mins",
     servings: "1",
     phase: "ovulatory",
+    image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
     ingredients: [
       "1 whole wheat wrap",
       "3 tbsp hummus",
@@ -197,6 +204,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "20 mins",
     servings: "2",
     phase: "ovulatory",
+    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
     ingredients: [
       "2 cups broccoli florets",
       "1 cup Brussels sprouts, halved",
@@ -222,6 +230,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "5 mins",
     servings: "1",
     phase: "ovulatory",
+    image: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
     ingredients: [
       "1 cup mixed berries",
       "1 scoop protein powder",
@@ -248,6 +257,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "35 mins",
     servings: "2",
     phase: "luteal",
+    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
     ingredients: [
       "2 sweet potatoes, cubed",
       "1 can chickpeas, drained",
@@ -272,6 +282,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "15 mins",
     servings: "12",
     phase: "luteal",
+    image: "https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=300&fit=crop",
     ingredients: [
       "1 cup dates, pitted",
       "1/2 cup almonds",
@@ -296,6 +307,7 @@ export const phaseRecipes: Recipe[] = [
     prepTime: "15 mins",
     servings: "2",
     phase: "luteal",
+    image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
     ingredients: [
       "2 ripe bananas",
       "1 cup rolled oats",
