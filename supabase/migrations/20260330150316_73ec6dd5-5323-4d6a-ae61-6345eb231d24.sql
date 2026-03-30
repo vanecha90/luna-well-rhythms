@@ -1,0 +1,1 @@
+CREATE POLICY "Users can update own workout logs" ON public.workout_logs FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
